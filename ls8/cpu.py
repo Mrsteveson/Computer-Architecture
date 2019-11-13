@@ -1,6 +1,13 @@
 """CPU functionality."""
 
 import sys
+# Set Instructions
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -10,6 +17,42 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.sp = 244
+        self.branchtable = {}
+        self.branchtable[HLT] = self.hlt
+        self.branchtable[LDI] = self.ldi
+        self.branchtable[PRN] = self.prn
+        self.branchtable[MUL] = self.mul
+        self.branchtable[POP] = self.pop
+        self.branchtable[PUSH] = self.push
+        self.running = True
+
+
+    def hlt(self, operand_a, operand_b):
+        self.running = False
+        self.pc += 1
+
+    def ldi(self, operand_a, operand_b):
+        self.reg[operand_a] = operand_b
+        self.pc += 3
+
+    def prn(self, operand_a, operand_b):
+        print(self.reg[operand_a])
+        self.pc += 2
+
+    def mul(self, operand_a, operand_b):
+        self.alu("MUL", operand_a, operand_b)
+        self.pc += 3
+
+    def pop(self, operand_a, operand_b):
+        self.reg[operand_a] = self.ram[self.sp]
+        self.sp += 1
+        self.pc += 2
+
+    def push(self, operand_a, operand_b):
+        self.sp -= 1
+        self.ram[self.sp] = self.reg[operand_a]
+        self.pc += 2
 
     def ram_read(self, MAR):
         "should accept the address to read and return the value stored"
@@ -67,29 +110,8 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        # Set Instructions
-        HLT = 0b00000001
-        LDI = 0b10000010
-        PRN = 0b01000111
-        MUL = 0b10100010
-
-        running = True
-        while running is True:
+        while self.running:
             IR = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-            if IR == HLT:
-                running = False
-            elif IR == LDI:
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-            elif IR == PRN:
-                operand_a = self.ram[self.pc + 1]
-                print(self.reg[operand_a])
-                self.pc += 2
-            elif IR == MUL:
-                self.alu("MUL", operand_a, operand_b)
-                self.pc += 3
-
-
-
+            self.branchtable[IR](operand_a, operand_b)
