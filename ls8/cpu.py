@@ -8,6 +8,10 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+ADD = 0b10100000
+CALL = 0b01010000
+RET = 0b00010001  
+
 
 class CPU:
     """Main CPU class."""
@@ -25,6 +29,9 @@ class CPU:
         self.branchtable[MUL] = self.mul
         self.branchtable[POP] = self.pop
         self.branchtable[PUSH] = self.push
+        self.branchtable[ADD] = self.add
+        self.branchtable[CALL] = self.call
+        self.branchtable[RET] = self.ret
         self.running = True
 
 
@@ -43,6 +50,19 @@ class CPU:
     def mul(self, operand_a, operand_b):
         self.alu("MUL", operand_a, operand_b)
         self.pc += 3
+
+    def add(self, operand_a, operand_b):
+        self.alu("ADD", operand_a, operand_b)
+        self.pc += 3
+
+    def call(self, operand_a, operand_b):
+        self.sp -= 1
+        self.ram[self.sp] = self.pc + 2
+        self.pc = self.reg[operand_a]
+
+    def ret(self, operand_a, operand_b):
+        self.pc = self.ram[self.sp]
+        self.sp += 1
 
     def pop(self, operand_a, operand_b):
         self.reg[operand_a] = self.ram[self.sp]
@@ -83,7 +103,7 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
-        if op == "MUL":
+        elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
